@@ -80,7 +80,7 @@ The AI evaluates positions based on:
 ```bash
 # Clone and run
 git clone <repository-url>
-cd tic-tac-toe-ai
+cd Tic-Tac-Toe-AI
 python fullgame.py
 ```
 
