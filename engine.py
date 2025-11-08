@@ -124,3 +124,7 @@ def _get_winning_lines(board, player):
             lines += 1
     
     return lines
+
+
+def _board_to_key(board):
+    return tuple(tuple(row) for row in board)
