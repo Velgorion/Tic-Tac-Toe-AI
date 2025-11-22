@@ -7,9 +7,12 @@ from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.core.window import Window
 from kivy.metrics import dp
+from kivy.clock import Clock
 from engine import get_legal_moves, make_move, get_winner, is_draw
 from AIs.minimax_ai import _minimax_score
+
 Window.clearcolor = (0.1, 0.13, 0.17, 1)
+
 class MenuScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -23,6 +26,7 @@ class MenuScreen(Screen):
         layout.add_widget(btn1)
         layout.add_widget(btn2)
         self.add_widget(layout)
+
 class GameBoard(BoxLayout):
     def __init__(self, mode='pvp', **kwargs):
         super().__init__(**kwargs)
@@ -52,6 +56,7 @@ class GameBoard(BoxLayout):
         control.add_widget(restart)
         control.add_widget(menu)
         self.add_widget(control)
+
     def on_button_press(self, button):
         if self.game_over:
             return
@@ -64,9 +69,15 @@ class GameBoard(BoxLayout):
             self.check_game_over()
             if self.mode=='pve' and self.current_player=='O' and not self.game_over:
                 self.status_label.text=f'Ход {self.player_names[1]} (O)'
-                App.get_running_app().root_window.canvas.ask_update()
-                self.make_ai_move()
-                self.check_game_over()
+                Clock.schedule_once(lambda dt: self.ai_move_sequence(), 0.3)
+
+    def ai_move_sequence(self):
+        """Выполняет ход AI и проверяет окончание игры"""
+        self.make_ai_move()
+        self.check_game_over()
+        if not self.game_over:
+            self.status_label.text = 'Ваш ход (X)'
+
     def make_move(self, x, y, player):
         self.board[y][x] = player
         idx = y*3+x
@@ -76,8 +87,9 @@ class GameBoard(BoxLayout):
         self.current_player = 'O' if player=='X' else 'X'
         if self.mode=='pvp' and not self.game_over:
             self.status_label.text=f'Ход {self.player_names[0] if self.current_player=="X" else self.player_names[1]} ({self.current_player})'
-        if self.mode=='pve' and not self.game_over:
-            self.status_label.text = 'Ваш ход (X)' if self.current_player=='X' else f'Ход {self.player_names[1]} (O)'
+        elif self.mode=='pve' and not self.game_over and player=='X':
+            pass
+
     def make_ai_move(self):
         legal_moves = get_legal_moves(self.board)
         best_score = float('-inf')
@@ -94,6 +106,7 @@ class GameBoard(BoxLayout):
         if best_move:
             x,y = best_move
             self.make_move(x,y,'O')
+
     def check_game_over(self):
         winner = get_winner(self.board)
         if winner:
@@ -106,6 +119,7 @@ class GameBoard(BoxLayout):
             self.show_popup('Ничья','Ничья!')
             return True
         return False
+
     def highlight_win(self, winner):
         win_patterns = [ [(i,j) for j in range(3)] for i in range(3)] + [ [(j,i) for j in range(3)] for i in range(3)] + [ [(i,i) for i in range(3)], [(i,2-i) for i in range(3)] ]
         for pat in win_patterns:
@@ -114,6 +128,7 @@ class GameBoard(BoxLayout):
                 for x,y in pat:
                     idx = y*3+x
                     self.buttons[idx].background_color = self.highlight_color
+
     def show_popup(self,title,msg):
         box = BoxLayout(orientation='vertical',padding=dp(18),spacing=dp(12))
         box.add_widget(Label(text=msg,font_size=dp(22),color=(0.95,0.95,0.92,1)))
@@ -122,6 +137,7 @@ class GameBoard(BoxLayout):
         box.add_widget(btn)
         popup=Popup(title=title,content=box,size_hint=(0.82,0.5),auto_dismiss=False)
         popup.open()
+
     def restart_game(self,*a):
         self.board = [[None,None,None] for _ in range(3)]
         self.game_over = False
@@ -131,13 +147,16 @@ class GameBoard(BoxLayout):
             btn.background_color=(0.13,0.17,0.19,1)
             btn.color=(0.8,0.8,0.8,1)
         self.status_label.text='Ваш ход (X)' if self.mode=='pve' or self.mode=='pvp' else ''
+
     def goto_menu(self,*a):
         App.get_running_app().root.current = 'menu'
+
 class GameScreen(Screen):
     def __init__(self,mode,**kwargs):
         super().__init__(**kwargs)
         self.game = GameBoard(mode=mode)
         self.add_widget(self.game)
+
 class TicTacToeApp(App):
     def build(self):
         sm = ScreenManager(transition=FadeTransition())
@@ -145,5 +164,6 @@ class TicTacToeApp(App):
         sm.add_widget(GameScreen('pvp', name='pvp'))
         sm.add_widget(GameScreen('pve', name='pve'))
         return sm
+
 if __name__=='__main__':
     TicTacToeApp().run()
