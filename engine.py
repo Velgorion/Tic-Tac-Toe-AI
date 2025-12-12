@@ -12,26 +12,21 @@ def get_legal_moves(board):
 
 
 def get_winner(board):
-    all_lines = [[], [], [], [], []] + board
 
     for i in range(3):
-        for j in range(3):
-            cell = board[i][j]
-            if j == 0:
-                all_lines[0].append(cell)
-            if j == 1:
-                all_lines[1].append(cell)
-            if j == 2:
-                all_lines[2].append(cell)
-            if j == i:
-                all_lines[3].append(cell)
-            if i + j == 2:
-                all_lines[4].append(cell)
-        
-    for line in all_lines:
-        if len(set(line)) == 1 and not line[0] is None:
-            return line[0]
-        
+        if board[i][0] is not None and board[i][0] == board[i][1] == board[i][2]:
+            return board[i][0]
+
+        if board[0][i] is not None and board[0][i] == board[1][i] == board[2][i]:
+            return board[0][i]
+
+    center = board[1][1]
+    if center is not None:
+        if board[0][0] == center == board[2][2]:
+            return center
+        if board[0][2] == center == board[2][0]:
+            return center
+
     return None
 
 
